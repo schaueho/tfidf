@@ -43,10 +43,10 @@
                                           (+ (count-docs-with-term term) 1)))))
                     {} terms)]
     (map (fn [tfpdoc]
-           (map  (fn [term]
-                   (* (get tfpdoc term 0)
-                      (get idf term 0)))
-                 (keys tfpdoc)))
+           (map (fn [term]
+                  (* (get tfpdoc term 0)
+                     (get idf term 0)))
+                terms))
            alltfs)))
 
 (defprotocol TfIdfProtocol
