@@ -2,11 +2,14 @@
 
 (defn tf
   "Returns a map of the normalized term frequencies for a sequence of words."
+  ;; Note: currently implements an augmented term frequency,
+  ;; cf. https://en.wikipedia.org/wiki/Tf%E2%80%93idf#Term_frequency_2 or
+  ;; http://nlp.stanford.edu/IR-book/html/htmledition/maximum-tf-normalization-1.html
   [wordseq]
   (let [tfreq (frequencies wordseq)
         maxfreq (val (apply max-key val tfreq))]
     (reduce (fn [resmap freq]
-              (update resmap freq #(/ % maxfreq)))
+              (update resmap freq #(+ 0.4 (/ (* 0.6 %) maxfreq))))
             tfreq (keys tfreq))))
 
 (defn idf
@@ -21,26 +24,27 @@
         doccount (count textseq)]
     (reduce (fn [resmap term]
               (assoc resmap term
-                     (Math/log (/ (+ doccount 1)
+                     (Math/log (/ (+ doccount 1) ; apply smoothing!
                                   (+ (count-docs-with-term term) 1)))))
             {} terms)))
 
 (defn tfidf
-  "Returns a sequence of the tf-idf values for a sequence of texts (sequence of words)."
+  "Returns a sequence of the terms and the tf-idf values for a sequence of texts (sequence of words)."
   [textseq]
   (let [alltfs (map tf textseq)
-        terms (reduce conj #{}
-                      (flatten (map keys alltfs)))
+        terms (into []
+                    (reduce conj #{}
+                            (flatten (map keys alltfs))))
         count-docs-with-term (fn [term]
                                (apply + (map #(if (get % term)
                                                 1
                                                 0)
                                              alltfs)))
         doccount (count textseq)
-        idf (reduce (fn [resmap term]
+        idf (reduce (fn [resmap term] ; Note: no smoothing here!
                       (assoc resmap term
-                             (Math/log (/ (+ doccount 1)
-                                          (+ (count-docs-with-term term) 1)))))
+                             (Math/log10 (/ doccount
+                                            (count-docs-with-term term)))))
                     {} terms)
         matrix (map (fn [tfpdoc]
                       (map (fn [term]
