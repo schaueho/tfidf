@@ -12,6 +12,18 @@
               (update resmap freq #(+ 0.4 (/ (* 0.6 %) maxfreq))))
             tfreq (keys tfreq))))
 
+(defn tfmap-to-termvector [tf-row terms]
+  "Convert tf-row into a vector of frequencies (potentially 0) for all terms in tf-row."
+  (reduce (fn [tfvec term]
+            (conj tfvec (get tf-row term 0)))
+          [] terms))
+
+(defn tf-from-docs [documents]
+  (let [tf-rows (map tf documents)
+        terms (vec (into #{} (flatten (map keys tf-rows))))]
+    (vector terms
+            (pmap #(tfmap-to-termvector % terms) tf-rows))))
+
 (defn idf
   "Returns a map of the inverse document frequency for a sequence of texts (sequence of words)."
   [textseq]

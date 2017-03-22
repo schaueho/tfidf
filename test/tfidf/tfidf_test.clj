@@ -123,3 +123,14 @@
                                                 ;((0.0 0.0 0.14384103622589034 0.0 0.34657359027997264 0.0 0.2876820724517807 0.0 0.0 0.0 0.34657359027997264 0.34657359027997264 0.0 0.0 0.0 0.34657359027997264 0.34657359027997264 0.0)
                                                  ;           (0.0 0.0 0.14384103622589034 0.34657359027997264 0.0 0.34657359027997264 0.14384103622589034 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0)
                                                   ;          (0.0 0.34657359027997264 0.0 0.0 0.0 0.0 0.0 0.34657359027997264 0.0 0.0 0.0 0.0 0.34657359027997264 0.34657359027997264 0.0 0.0 0.0 0.0))}))))
+
+(facts "Generate TF data for some docs"
+       (fact "Convert a tfmap to a vector of tf values per term"
+             (tfidf/tfmap-to-termvector {"foo" 1 "bar" 2 "baz" 3}
+                                  ["abc" "foo" "def" "baz" "ghi" "bar"])
+             => [0 1 0 3 0 2])
+       (fact "We can convert a document collection to a set of rows of tf values"
+             (tfidf/tf-from-docs [["foo" "bar" "baz" "bar" "foo"] ["abc" "abc" "abc" "def"]])
+             => [["foo" "bar" "baz" "abc" "def"] ; vocabulary
+                 [[1.0 1.0 0.7 0 0]              ; adapted vector for doc 1
+                  [0 0 0 1.0 0.6]]]))            ; adapted vector for doc 2
