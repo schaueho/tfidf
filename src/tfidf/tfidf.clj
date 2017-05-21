@@ -1,10 +1,78 @@
-(ns bmtagger.tfidf)
+(ns bmtagger.tfidf
+  (:require [bmtagger.freq :refer [freq]]))
 
-(defn tf
-  "Returns a map of the normalized term frequencies for a sequence of words."
-  ;; Note: currently implements an augmented term frequency,
+(defn normalize-value [maxfreq curfreq]
+  "Augment a frequency value, cf. https://en.wikipedia.org/wiki/Tf%E2%80%93idf#Term_frequency_2"
   ;; cf. https://en.wikipedia.org/wiki/Tf%E2%80%93idf#Term_frequency_2 or
   ;; http://nlp.stanford.edu/IR-book/html/htmledition/maximum-tf-normalization-1.html
+  (-> (* 0.6 curfreq)
+      (/ maxfreq)
+      (+ 0.4)))
+
+(defn normalize-tfmap [freqs]
+  "Returns a normalization sequence of a frequency map."
+  ;; Brief algorithmic description:
+  ;; Then we map the normalization over the sequence of [term frequency] entries.
+  ;; First, we get the maximum frequency to build our `normalize-maxvalue` function.
+  ;; This will be used on the frequency value only `(comp normalize-max val)`
+  ;; juxt applies `key` and the normalization to a [term freq] pair, generating
+  ;; a new list [key normalized], which will be picked up by map.
+  (let [maxfreq (val (apply max-key val freqs))
+        normalize-maxvalue (partial normalize-value maxfreq)
+        normalize-termfreq (juxt key (comp normalize-maxvalue val))]
+    (map normalize-termfreq freqs)))
+
+(defn normalize-tf-xf
+  "Returns a normalization of frequencies (either a single map or a collection of maps). 
+Returns a stateful transducer when no collection is provided."
+  ([]
+   (fn [rf]
+     (let [nfm (atom {})
+           maxfreq (atom 1)]
+       (fn
+         ([] (rf))
+         ([result] (rf result))
+         ([result input]
+          (let [newmax (val (apply max-key val input))
+                normalize-maxvalue (partial normalize-value newmax)
+                normalize-termfreq (juxt key (comp normalize-maxvalue val))]
+            (reset! maxfreq newmax)
+            (swap! nfm merge (into {} (map normalize-termfreq input)))
+            (rf result @nfm)))))))
+  ([freqs]
+   (cond
+     (map? freqs) (into {} (normalize-tf-xf) [freqs])
+     (sequential? freqs) (into {} (normalize-tf-xf) freqs)
+     :else (throw (ex-info "Don't know how to normalize non-sequential / non-map like type"
+                           {:data freqs})))))
+
+(def norm-tf-xf
+  "Transducer that will return normalized frequencies."
+  (comp (freq) (normalize-tf-xf)))
+
+(defn tf
+  "Returns a map of term frequencies for a sequence of words.
+Keyword `normalize` defaults to true, returning an augemented term frequency."
+  [wordseq & {:keys [normalize] :or {normalize true}}]
+  (if normalize
+    (into {} norm-tf-xf wordseq)
+    (freq wordseq)))
+
+(defn tf-map
+  "Returns a map of term frequencies for a sequence of words.
+Keyword `normalize` defaults to true, returning an augemented term frequency."
+  [wordseq & {:keys [normalize] :or {normalize true}}]
+  (let [tfreqs (frequencies wordseq)]
+    (if-not normalize
+      tfreqs
+      (let [maxfreq (val (apply max-key val tfreqs))
+            normalize-tf-xf (map (fn [[term freq]]
+                                   [term (normalize-value maxfreq freq)]))]
+        (into {} normalize-tf-xf tfreqs)))))
+
+(defn tf-reduce
+  "Returns a map of the normalized term frequencies for a sequence of words."
+  ;; Note: currently implements an augmented term frequency,
   [wordseq]
   (let [tfreq (frequencies wordseq)
         maxfreq (val (apply max-key val tfreq))]

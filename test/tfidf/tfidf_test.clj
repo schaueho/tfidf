@@ -7,11 +7,22 @@
 (def text3 '("And" "just" "some" "other" "english" "text" "test" "onli" "for" "test"))
 (def textcoll (list text1 text2 text3))
 
+(facts "Normalize a frequency map"
+       (fact "We can call the normalization with a normal map."
+             (tfidf/normalize-tf-xf {:b 2, :a 3, :c 1}) => {:b 0.8, :a 1.0, :c 0.6})
+       (fact "We can call the normalization with a sequence of maps, but it will only return the normalization of the last one."
+             (tfidf/normalize-tf-xf [{:b 1}{:b 2, :a 3, :c 1}]) => {:b 0.8, :a 1.0, :c 0.6})
+       (fact "Normalization can be used as a transducer"
+             (into {} (tfidf/normalize-tf-xf) [{:b 1}{:b 2, :a 3, :c 1}]) => {:b 0.8, :a 1.0, :c 0.6}
+             (into [] (tfidf/normalize-tf-xf) [{:b 1}{:b 2, :a 3, :c 1}]) => [{:b 1.0} {:b 0.8, :a 1.0, :c 0.6}]))
+
 (facts "Computing tf-idf"
-       (fact "Compute term-frequency"
-             (frequencies text1) => (contains {"is" 2 "This" 1}))
+       (fact "Compute term-frequency unnormalized"
+             (tfidf/tf text1 :normalize false) => (frequencies text1))
        (fact "Compute normalized term-frequency for a text"
              (tfidf/tf text1) => (contains {"is" 1.0 "This" 0.7}))
+       (fact "Compute normalized term-frequency for a text using the transducer"
+             (into {} tfidf/norm-tf-xf text1) => (contains {"is" 1.0 "This" 0.7}))
        (fact "Compute inverted document frequencies for a collection"
              (tfidf/idf textcoll) => (contains {"onli" 0.0,
                                                  "And" 0.6931471805599453,
