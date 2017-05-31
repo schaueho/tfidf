@@ -96,36 +96,34 @@ Keyword `normalize` defaults to true, returning an augemented term frequency."
   "Returns a map of the inverse document frequency for a sequence of texts (sequence of words)."
   [textseq]
   (let [alltfs (map tf textseq)
-        terms (reduce conj #{}
-                      (flatten (map keys alltfs)))
-        count-docs-with-term (fn [term]
-                               (apply + (map #(if (get % term) 1 0)
-                                             alltfs)))
+        termdoccount (reduce (fn [result tfmap]
+                               (reduce (fn [resmap [term _]]
+                                           (update resmap term (fnil inc 0)))
+                                       result tfmap))
+                             {} alltfs)
         doccount (count textseq)]
-    (reduce (fn [resmap term]
+    (reduce (fn [resmap [term docswithterm]]
               (assoc resmap term
                      (Math/log (/ (+ doccount 1) ; apply smoothing!
-                                  (+ (count-docs-with-term term) 1)))))
-            {} terms)))
+                                  (+ docswithterm 1)))))
+            {} termdoccount)))
 
 (defn tfidf
   "Returns a sequence of the terms and the tf-idf values for a sequence of texts (sequence of words)."
   [textseq]
   (let [alltfs (map tf textseq)
-        terms (into []
-                    (reduce conj #{}
-                            (flatten (map keys alltfs))))
-        count-docs-with-term (fn [term]
-                               (apply + (map #(if (get % term)
-                                                1
-                                                0)
-                                             alltfs)))
+        termdoccount (reduce (fn [result tfmap]
+                               (reduce (fn [resmap [term _]]
+                                           (update resmap term (fnil inc 0)))
+                                       result tfmap))
+                             {} alltfs)
+        terms (keys termdoccount)
         doccount (count textseq)
-        idf (reduce (fn [resmap term] ; Note: no smoothing here!
-                      (assoc resmap term
-                             (Math/log10 (/ doccount
-                                            (count-docs-with-term term)))))
-                    {} terms)
+        idf (reduce (fn [resmap [term docswithterm]]
+              (assoc resmap term
+                     (Math/log10 (/ doccount ; Note: no smoothing here!
+                                    docswithterm))))
+            {} termdoccount)
         matrix (map (fn [tfpdoc]
                       (map (fn [term]
                              (* (get tfpdoc term 0)

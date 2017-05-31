@@ -50,8 +50,9 @@
              ;; because we're using a different tf computation
              (let [text1 '("this" "is" "a" "sample" "a")
                    text2 '("this" "another" "is" "example" "another" "example" "example")]
-               (tfidf/tfidf (list text1 text2)) => [["example" "this" "is" "another" "a" "sample"]
-                                                    '((0.0 0.0 0.0 0.0 0.3010299956639812 0.21072099696478683) (0.3010299956639812 0.0 0.0 0.24082399653118497 0.0 0.0))])))
+               (tfidf/tfidf (list text1 text2)) => [["this" "is" "a" "sample" "another" "example"]
+                                                    '((0.0 0.0 0.3010299956639812 0.21072099696478683 0.0 0.0)
+                                                      (0.0 0.0 0.0 0.0 0.24082399653118497 0.3010299956639812))])))
 
 
 (def doc1 {:title "Doc1"
