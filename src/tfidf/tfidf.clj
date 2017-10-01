@@ -181,6 +181,30 @@ Returns a transducer when called without a collection."
                     alltfs)]
     [terms matrix]))
 
+(defn tfidf-xf
+  "Returns a map of the terms, the tf and  tf-idf values for a sequence of texts (sequence of words),
+given an input collection of sorted(!) maps of terms/doccount/idf and tf values.
+  Returns a transducer if called without a collection."
+  ([]
+   (fn [rf]
+     (fn
+       ([] (rf))
+       ([result] (rf result))
+       ([result input]
+        (println input)
+        (let [tfidfs
+              (map (fn [tfdoc]
+                     ;; make use of the fact that the tf values are placed at exactly
+                     ;; the same position as their corresponding term in the term vector
+                     ;; by mapping over both tf and term vector in parallel
+                     (map (fn [tfvalue [term {doccount :doccount idf :idf}]]
+                            (* tfvalue idf))
+                          tfdoc (:terms input)))
+                   (:tfs input))]
+          (rf result {:terms (:terms input) :tfs (:tfs input) :tfidfs tfidfs}))))))
+  ([coll]
+   (into {} (tfidf-xf) coll)))
+
 (defprotocol TfIdfProtocol
   (add-doc [tfidfr doc])
   (get-tfidf-for-doc [tfidfr docid])

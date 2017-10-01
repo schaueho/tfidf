@@ -193,3 +193,37 @@
                (into {} (comp (tfidf/tf-from-docs-xf) (tfidf/idf-xf)) (map tfidf/tf textcoll))
                => expecteddata)))
 
+(facts "Test transducer version to compile tfidf data"
+       (let [testidfdata {:terms (into (sorted-map) ; !sorted map expected!
+                                  {"And" {:doccount 1, :idf 0.47712125471966244},
+                                   "Another" {:doccount 1, :idf 0.47712125471966244},
+                                   "This" {:doccount 1, :idf 0.47712125471966244},
+                                   "a" {:doccount 1, :idf 0.47712125471966244},
+                                   "english" {:doccount 3, :idf 0.0},
+                                   "for" {:doccount 3, :idf 0.0},
+                                   "here" {:doccount 1, :idf 0.47712125471966244},
+                                   "is" {:doccount 2, :idf 0.17609125905568124},
+                                   "just" {:doccount 1, :idf 0.47712125471966244},
+                                   "onli" {:doccount 3, :idf 0.0},
+                                   "other" {:doccount 1, :idf 0.47712125471966244},
+                                   "pars" {:doccount 1, :idf 0.47712125471966244},
+                                   "silli" {:doccount 1, :idf 0.47712125471966244},
+                                   "some" {:doccount 1, :idf 0.47712125471966244},
+                                   "stupid" {:doccount 1, :idf 0.47712125471966244},
+                                   "test" {:doccount 3, :idf 0.0},
+                                   "text" {:doccount 3, :idf 0.0},
+                                   "which" {:doccount 2, :idf 0.17609125905568124}})
+                          :tfs '((0.7 0 0 0 0.7 0.7 0 0 0.7 0.7 0.7 0 0 0.7 0 1.0 0.7 0)
+                                 (0 0 0.7 0.7 0.7 0.7 0.7 1.0 0 0.7 0 0.7 0.7 0 0 1.0 0.7 0.7)
+                                 (0 0.7 0 0 0.7 0.7 0 0.7 0 0.7 0 0 0 0 0.7 1.0 0.7 0.7))}
+             expecteddata {:terms (:terms testidfdata)
+                           :tfs (:tfs testidfdata)
+                           :tfidfs '((0.33398487830376367 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.33398487830376367 0.0 0.33398487830376367 0.0 0.0 0.33398487830376367 0.0 0.0 0.0 0.0)
+(0.0 0.0 0.33398487830376367 0.33398487830376367 0.0 0.0 0.33398487830376367 0.17609125905568124 0.0 0.0 0.0 0.33398487830376367 0.33398487830376367 0.0 0.0 0.0 0.0 0.12326388133897685)
+(0.0 0.33398487830376367 0.0 0.0 0.0 0.0 0.0 0.12326388133897685 0.0 0.0 0.0 0.0 0.0 0.0 0.33398487830376367 0.0 0.0 0.12326388133897685))
+                           }]
+         (fact "tfidf-xf applies to a map of terms/doccounts/idfs and tf values per doc"
+               (tfidf/tfidf-xf [testidfdata]) => expecteddata)
+         (fact "Functional test of tf, tf-docs and idf"
+               (into {} (comp (tfidf/tf-from-docs-xf) (tfidf/idf-xf) (tfidf/tfidf-xf)) (map tfidf/tf textcoll))
+               => expecteddata)))
