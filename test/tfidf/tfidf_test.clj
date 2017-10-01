@@ -159,3 +159,36 @@
                   oldtfs (dorun (map #(zipmap (first olddata) %) (second olddata)))
                   newtfs (dorun (map #(zipmap (:terms newdata) %) (:tfs newdata)))]
               (= oldtfs newtfs)) => true))
+
+(facts "Test transducer version to compile idf documents"
+       (let [testtfdata [{:terms {"And" 1, "Another" 1, "This" 1, "a" 1, "english" 3, "for" 3,
+                                  "here" 1, "is" 2, "just" 1, "onli" 3, "other" 1, "pars" 1,
+                                  "silli" 1, "some" 1, "stupid" 1, "test" 3, "text" 3, "which" 2},
+                          :tfs '((0.7 0 0 0 0.7 0.7 0 0 0.7 0.7 0.7 0 0 0.7 0 1.0 0.7 0)
+                                 (0 0 0.7 0.7 0.7 0.7 0.7 1.0 0 0.7 0 0.7 0.7 0 0 1.0 0.7 0.7)
+                                 (0 0.7 0 0 0.7 0.7 0 0.7 0 0.7 0 0 0 0 0.7 1.0 0.7 0.7))}]
+             expecteddata {:terms (:terms (first testtfdata))
+                           :tfs (:tfs (first testtfdata))
+                           :idfs '{"onli" 0.0,
+                                   "And" 0.6931471805599453,
+                                   "which" 0.2876820724517807,
+                                   "stupid" 0.6931471805599453,
+                                   "pars" 0.6931471805599453,
+                                   "Another" 0.6931471805599453,
+                                   "is" 0.2876820724517807,
+                                   "just" 0.6931471805599453,
+                                   "for" 0.0,
+                                   "text" 0.0,
+                                   "a" 0.6931471805599453,
+                                   "here" 0.6931471805599453,
+                                   "other" 0.6931471805599453,
+                                   "some" 0.6931471805599453,
+                                   "english" 0.0,
+                                   "silli" 0.6931471805599453,
+                                   "This" 0.6931471805599453,
+                                   "test" 0.0}}]
+         (fact "idf-xf applies to a map of terms/doccounts and tf values per doc"
+               (tfidf/idf-xf testtfdata) => expecteddata)
+         (fact "Functional test of tf, tf-docs and idf"
+               (into {} (comp (tfidf/tf-from-docs-xf) (tfidf/idf-xf)) (map tfidf/tf textcoll))
+               => expecteddata)))

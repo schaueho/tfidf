@@ -140,6 +140,25 @@ Returns a stateful transducer when no collection is provided."
                                   (+ docswithterm 1)))))
             {} termdoccount)))
 
+(defn idf-xf
+  "Returns a map of the inverse document frequency for some documents. Expects the input to be a collection of maps of terms with number of documents the term appears in and a list of term frequencies.
+Returns a transducer when called without a collection."
+  ([]
+   (fn [rf]
+     (fn
+       ([] (rf))
+       ([result] (rf result))
+       ([result input]
+        (let [doccount (count (:tfs input))
+              idfs (reduce (fn [resmap [term docswithterm]]
+                             (assoc resmap term
+                                    (Math/log (/ (+ doccount 1) ; apply smoothing!
+                                                 (+ docswithterm 1)))))
+                           {} (:terms input))]
+          (rf result {:terms (:terms input) :tfs (:tfs input) :idfs idfs}))))))
+  ([coll]
+   (into {} (idf-xf) coll)))
+
 (defn tfidf
   "Returns a sequence of the terms and the tf-idf values for a sequence of texts (sequence of words)."
   [textseq]
