@@ -70,7 +70,7 @@ Keyword `normalize` defaults to true, returning an augemented term frequency."
                                    [term (normalize-value maxfreq freq)]))]
         (into {} normalize-tf-xf tfreqs)))))
 
-(defn tf-reduce
+(defn ^:obsolete tf-reduce
   "Returns a map of the normalized term frequencies for a sequence of words."
   ;; Note: currently implements an augmented term frequency,
   [wordseq]
@@ -80,19 +80,18 @@ Keyword `normalize` defaults to true, returning an augemented term frequency."
               (update resmap freq #(+ 0.4 (/ (* 0.6 %) maxfreq))))
             tfreq (keys tfreq))))
 
-(defn tfmap-to-termvector [tf-row terms]
+(defn ^:obsolete tfmap-to-termvector [tf-row terms]
   "Convert tf-row into a vector of frequencies (potentially 0) for all terms in tf-row."
   (reduce (fn [tfvec term]
             (conj tfvec (get tf-row term 0)))
           [] terms))
 
-(defn tf-from-docs [documents]
+(defn ^:obsolete tf-from-docs [documents]
   "Returns a vector of all terms in documents and the related tf-vector for each document"
   (let [tf-rows (map tf documents)
         terms (vec (into #{} (flatten (map keys tf-rows))))]
     (vector terms
             (pmap #(tfmap-to-termvector % terms) tf-rows))))
-
 
 (defn tf-from-docs-xf
   "Returns a map of terms with the number of documents a term appears in and a list of related tf-vector for each document, sorted according to the terms.
