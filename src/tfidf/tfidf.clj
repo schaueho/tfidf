@@ -87,10 +87,42 @@ Keyword `normalize` defaults to true, returning an augemented term frequency."
           [] terms))
 
 (defn tf-from-docs [documents]
+  "Returns a vector of all terms in documents and the related tf-vector for each document"
   (let [tf-rows (map tf documents)
         terms (vec (into #{} (flatten (map keys tf-rows))))]
     (vector terms
             (pmap #(tfmap-to-termvector % terms) tf-rows))))
+
+
+(defn tf-from-docs-xf
+  "Returns a map of terms with the number of documents a term appears in and a list of related tf-vector for each document, sorted according to the terms.
+Returns a stateful transducer when no collection is provided."
+  ([]
+   (fn [rf]
+     (let [termdoccount (atom (sorted-map))
+           tfs (atom [])]
+       (fn
+         ([] (rf))
+         ([result] (rf result))
+         ([result input]
+          (let [newtdcount
+                (reduce (fn [newtdcount term]
+                          (update newtdcount term (fnil inc 0))) ; inc #term, even if missing (=0)
+                        @termdoccount (keys input))
+                termcount (count (keys newtdcount))
+                termzeromap (into (sorted-map)
+                                (zipmap (keys newtdcount)
+                                        (repeat termcount 0)))
+                currows (map (fn [tfdoc]
+                               (vals (merge termzeromap tfdoc)))
+                             @tfs)
+                newrow (vals (merge termzeromap input))
+                currows (conj currows newrow)]
+            (swap! tfs conj input)
+            (reset! termdoccount newtdcount)
+            (rf result {:terms @termdoccount :tfs currows})))))))
+  ([coll]
+   (into {} (tf-from-docs-xf) coll)))
 
 (defn idf
   "Returns a map of the inverse document frequency for a sequence of texts (sequence of words)."
