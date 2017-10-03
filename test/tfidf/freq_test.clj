@@ -1,6 +1,6 @@
-(ns bmtagger.freq-test
+(ns tfidf.freq-test
   (:use midje.sweet)
-  (:require [bmtagger.freq :as f :refer [freq]]))
+  (:require [tfidf.freq :as f :refer [freq]]))
 
 
 (defn intermediate-frequencies [coll]

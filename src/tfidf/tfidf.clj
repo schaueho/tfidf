@@ -1,5 +1,5 @@
-(ns bmtagger.tfidf
-  (:require [bmtagger.freq :refer [freq]]))
+(ns tfidf.tfidf
+  (:require [tfidf.freq :refer [freq]]))
 
 (defn normalize-value [maxfreq curfreq]
   "Augment a frequency value, cf. https://en.wikipedia.org/wiki/Tf%E2%80%93idf#Term_frequency_2"

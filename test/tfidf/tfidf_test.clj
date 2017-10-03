@@ -1,6 +1,6 @@
-(ns bmtagger.tfidf-test
+(ns tfidf.tfidf-test
   (:use midje.sweet)
-  (:require [bmtagger.tfidf :as tfidf]))
+  (:require [tfidf.tfidf :as tfidf]))
 
 (def text1 '("This" "is" "a" "silli" "english" "text" "test" "which" "is" "onli" "here" "for" "test" "pars"))
 (def text2 '("Another" "stupid" "english" "text" "test" "which" "is" "onli" "for" "test"))

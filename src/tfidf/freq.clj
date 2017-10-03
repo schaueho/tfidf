@@ -1,4 +1,4 @@
-(ns bmtagger.freq)
+(ns tfidf.freq)
 
 (defn freq
   "Returns a map from distinct items in coll to the number of times
