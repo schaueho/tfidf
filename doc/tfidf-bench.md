@@ -129,3 +129,16 @@ Version with map:
 	nil
 
 Take away: doubling the text number tripples the run time.
+
+Now, let's use `pmap` instead of `map` and test again with 200 texts:
+
+    tfidf.bench> (tfidf-at-once-bench textcoll)
+    tfidf done.
+    "Elapsed time: 22885.468282 msecs"
+    nil
+    tfidf.bench> (tfidf-xf-bench textcoll)
+    tfidf done.
+    "Elapsed time: 63297.121344 msecs"
+    nil
+
+Both versions benefit a lot from the parallelization, but the transducer version not to the same amount (roughly 3:1 vs. 2:1). I would assume that this is mostly due to the fact that the `idf-xf` computation is not parallelized, but re-triggered. In the at-once version, idf values are computed only once, so the missing parallelization doesn't have so much of an impact.

@@ -160,7 +160,7 @@ Returns a transducer when called without a collection."
 (defn tfidf
   "Returns a sequence of the terms and the tf-idf values for a sequence of texts (sequence of words)."
   [textseq]
-  (let [alltfs (map tf textseq)
+  (let [alltfs (pmap tf textseq)
         termdoccount (reduce (fn [result tfmap]
                                (reduce (fn [resmap [term _]]
                                            (update resmap term (fnil inc 0)))
@@ -173,7 +173,7 @@ Returns a transducer when called without a collection."
                      (Math/log10 (/ doccount ; Note: no smoothing here!
                                     docswithterm))))
             {} termdoccount)
-        matrix (map (fn [tfpdoc]
+        matrix (pmap (fn [tfpdoc]
                       (map (fn [term]
                              (* (get tfpdoc term 0)
                                 (get idf term 0)))
@@ -191,9 +191,8 @@ given an input collection of sorted(!) maps of terms/doccount/idf and tf values.
        ([] (rf))
        ([result] (rf result))
        ([result input]
-        (println input)
         (let [tfidfs
-              (map (fn [tfdoc]
+              (pmap (fn [tfdoc]
                      ;; make use of the fact that the tf values are placed at exactly
                      ;; the same position as their corresponding term in the term vector
                      ;; by mapping over both tf and term vector in parallel
