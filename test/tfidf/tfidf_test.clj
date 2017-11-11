@@ -149,7 +149,7 @@
 
 (facts "Test transducer version to compile term frequencies from documents"
       (fact "We can convert a document collection to a set of rows of tf values"
-            (tfidf/tf-from-docs-xf (map tfidf/tf textcoll)) => {:terms {"And" 1, "Another" 1, "This" 1, "a" 1, "english" 3, "for" 3, "here" 1, "is" 2, "just" 1, "onli" 3, "other" 1, "pars" 1, "silli" 1, "some" 1, "stupid" 1, "test" 3, "text" 3, "which" 2},
+            (tfidf/tf-from-docs-xf textcoll) => {:terms {"And" 1, "Another" 1, "This" 1, "a" 1, "english" 3, "for" 3, "here" 1, "is" 2, "just" 1, "onli" 3, "other" 1, "pars" 1, "silli" 1, "some" 1, "stupid" 1, "test" 3, "text" 3, "which" 2},
                                                     :tfs '((0.7 0 0 0 0.7 0.7 0 0 0.7 0.7 0.7 0 0 0.7 0 1.0 0.7 0)
                                                           (0 0 0.7 0.7 0.7 0.7 0.7 1.0 0 0.7 0 0.7 0.7 0 0 1.0 0.7 0.7)
                                                           (0 0.7 0 0 0.7 0.7 0 0.7 0 0.7 0 0 0 0 0.7 1.0 0.7 0.7))})

@@ -58,7 +58,7 @@ Keyword `normalize` defaults to true, returning an augemented term frequency."
     (into {} norm-tf-xf wordseq)
     (freq wordseq)))
 
-(defn tf-map
+(defn ^:obsolete tf-map
   "Returns a map of term frequencies for a sequence of words.
 Keyword `normalize` defaults to true, returning an augemented term frequency."
   [wordseq & {:keys [normalize] :or {normalize true}}]
@@ -66,9 +66,9 @@ Keyword `normalize` defaults to true, returning an augemented term frequency."
     (if-not normalize
       tfreqs
       (let [maxfreq (val (apply max-key val tfreqs))
-            normalize-tf-xf (map (fn [[term freq]]
+            normalize-tf (map (fn [[term freq]]
                                    [term (normalize-value maxfreq freq)]))]
-        (into {} normalize-tf-xf tfreqs)))))
+        (into {} normalize-tf tfreqs)))))
 
 (defn ^:obsolete tf-reduce
   "Returns a map of the normalized term frequencies for a sequence of words."
@@ -121,7 +121,7 @@ Returns a stateful transducer when no collection is provided."
             (reset! termdoccount newtdcount)
             (rf result {:terms @termdoccount :tfs currows})))))))
   ([coll]
-   (into {} (tf-from-docs-xf) coll)))
+   (into {} (tf-from-docs-xf) (map tf coll))))
 
 (defn idf
   "Returns a map of the inverse document frequency for a sequence of texts (sequence of words)."
