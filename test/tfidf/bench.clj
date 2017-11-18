@@ -1,6 +1,8 @@
 (ns tfidf.bench
   (:require [clojure.string :as str]
-            [tfidf.tfidf :as tfidf :refer :all]))
+            [tfidf.tfidf :as tfidf :refer :all]
+            [tfidf.xf :as xf]
+            [tfidf.protocol :as protocol :refer :all]))
 
 (defn file2wordlist [wordlistfile]
   (-> (slurp wordlistfile)
@@ -36,7 +38,7 @@ Wordlist should be a file with one word per line."
             (println "tfidf done."))))
 
 (defn tfidf-xf-bench [textcoll]
-  (time (do (into {} (comp (tf-from-docs-xf) (idf-xf) (tfidf-xf)) (pmap tf textcoll))
+  (time (do (into {} (comp (xf/tf-from-docs-xf) (xf/idf-xf) (xf/tfidf-xf)) (pmap xf/tf textcoll))
             (println "tfidf done."))))
 
 (defn tfidf-incremental-bench [doccoll]
