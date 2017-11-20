@@ -29,7 +29,7 @@ For the one-pass computation, simply call `tfidf` on a text collection. The foll
 The transducer version to compute tf-idf values expects that a prior computation of tf and idf values, like so:
 
 	    user> (require '[tfidf.xf :as xf])
-	    user> (into {} (comp (xf/tf-from-docs-xf) (xf/idf-xf) (xf/tfidf-xf)) (map xf/tf textcoll))
+	    user> (into {} (comp (map xf/tf) (xf/tf-from-docs-xf) (xf/idf-xf) (xf/tfidf-xf)) textcoll)
         {:terms {"And" {:doccount 1, :idf 0.47712125471966244},
 		         "Another" {:doccount 1, :idf 0.47712125471966244},
 				 "This" {:doccount 1, :idf 0.47712125471966244},
@@ -158,7 +158,7 @@ In this example I used `conj` as the reducing function, so we can see how the `t
 
 The transducer version expects an input as produced from the term frequency transducer, i.e., a map of terms (a `sorted-map` with their respective occurence frequency) and a sequence of tfs value per document.
 	
-		user> (into {} (comp (xf/tf-from-docs-xf) (xf/idf-xf)) (map xf/tf textcoll))
+		user> (into {} (comp (map xf/tf) (xf/tf-from-docs-xf) (xf/idf-xf)) textcoll)
 		{:terms {"And" {:doccount 1, :idf 0.47712125471966244},
 				 "Another" {:doccount 1, :idf 0.47712125471966244},
 				 "This" {:doccount 1, :idf 0.47712125471966244},

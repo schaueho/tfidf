@@ -74,7 +74,7 @@
          (fact "idf-xf applies to a map of terms/doccounts and tf values per doc"
                (xf/idf-xf testtfdata) => expecteddata)
          (fact :integration "Functional test of tf, tf-docs and idf"
-               (into {} (comp (xf/tf-from-docs-xf) (xf/idf-xf)) (map xf/tf textcoll))
+               (into {} (comp (map xf/tf) (xf/tf-from-docs-xf) (xf/idf-xf)) textcoll)
                => expecteddata)))
 
 (facts "Test transducer version to compile tfidf data"
@@ -108,5 +108,5 @@
          (fact "tfidf-xf applies to a map of terms/doccounts/idfs and tf values per doc"
                (xf/tfidf-xf [testidfdata]) => expecteddata)
          (fact :integration "Functional test of tf, tf-docs and idf"
-               (into {} (comp (xf/tf-from-docs-xf) (xf/idf-xf) (xf/tfidf-xf)) (map xf/tf textcoll))
+               (into {} (comp (map xf/tf) (xf/tf-from-docs-xf) (xf/idf-xf) (xf/tfidf-xf)) textcoll)
                => expecteddata)))
