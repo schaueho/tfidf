@@ -45,17 +45,17 @@ Returns a stateful transducer when no collection is provided."
          ([] (rf))
          ([result] (rf result))
          ([result input]
-          (let [newtdcount
+          (let [newtdcount ; re-compute for each term how many documents contain it
                 (reduce (fn [newtdcount term]
                           (update newtdcount term (fnil inc 0))) ; inc #term, even if missing (=0)
                         @termdoccount (keys input))
-                termcount (count (keys newtdcount))
-                termzeromap (into (sorted-map)
-                                (zipmap (keys newtdcount)
-                                        (repeat termcount 0)))
-                currows (map (fn [tfdoc]
-                               (vals (merge termzeromap tfdoc)))
-                             @tfs)
+                termcount (count (keys newtdcount))              ; determine |terms|
+                termzeromap (into (sorted-map)                   ; build up a sorted map
+                                (zipmap (keys newtdcount)        ; of terms with vectors of
+                                        (repeat termcount 0)))   ; length |terms| all set to 0
+                currows (map (fn [tfdoc]                         ; re-map all existing tfs
+                               (vals (merge termzeromap tfdoc))) ; so that they contains all terms
+                             @tfs)                               ; with 0 or the old tf value
                 newrow (vals (merge termzeromap input))
                 currows (conj currows newrow)]
             (swap! tfs conj input)
