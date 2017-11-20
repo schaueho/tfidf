@@ -4,11 +4,9 @@
 
 (defn normalize-tf-xf
   "Returns a normalization of frequencies (either a single map or a collection of maps). 
-Returns a stateful transducer when no collection is provided."
+Returns a transducer when no collection is provided."
   ([]
    (fn [rf]
-     (let [nfm (atom {})
-           maxfreq (atom 1)]
        (fn
          ([] (rf))
          ([result] (rf result))
@@ -16,9 +14,7 @@ Returns a stateful transducer when no collection is provided."
           (let [newmax (val (apply max-key val input))
                 normalize-maxvalue (partial normalize-value newmax)
                 normalize-termfreq (juxt key (comp normalize-maxvalue val))]
-            (reset! maxfreq newmax)
-            (swap! nfm merge (into {} (map normalize-termfreq input)))
-            (rf result @nfm)))))))
+            (rf result (into {} (map normalize-termfreq input))))))))
   ([freqs]
    (cond
      (map? freqs) (into {} (normalize-tf-xf) [freqs])
