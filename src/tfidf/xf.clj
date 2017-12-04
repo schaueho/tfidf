@@ -39,8 +39,8 @@ Keyword `normalize` defaults to true, returning an augemented term frequency."
 Returns a stateful transducer when no collection is provided."
   ([]
    (fn [rf]
-     (let [termdoccount (atom (sorted-map))
-           tfs (atom [])]
+     (let [termdoccount (volatile! (sorted-map))
+           tfs (volatile! [])]
        (fn
          ([] (rf))
          ([result] (rf result))
@@ -58,8 +58,8 @@ Returns a stateful transducer when no collection is provided."
                              @tfs)                               ; with 0 or the old tf value
                 newrow (vals (merge termzeromap input))
                 currows (conj currows newrow)]
-            (swap! tfs conj input)
-            (reset! termdoccount newtdcount)
+            (vswap! tfs conj input)
+            (vreset! termdoccount newtdcount)
             (rf result {:terms @termdoccount :tfs currows})))))))
   ([coll]
    (into {} (tf-from-docs-xf) (map tf coll))))
@@ -97,7 +97,7 @@ given an input collection of sorted(!) maps of terms/doccount/idf and tf values.
                      ;; make use of the fact that the tf values are placed at exactly
                      ;; the same position as their corresponding term in the term vector
                      ;; by mapping over both tf and term vector in parallel
-                     (map (fn [tfvalue [term {doccount :doccount idf :idf}]]
+                     (pmap (fn [tfvalue [term {doccount :doccount idf :idf}]]
                             (* tfvalue idf))
                           tfdoc (:terms input)))
                    (:tfs input))]

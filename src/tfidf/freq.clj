@@ -5,12 +5,12 @@
   they appear. Returns a stateful transducer when no collection is provided."
   ([]
    (fn [rf]
-     (let [freqm (atom {})]
+     (let [freqm (volatile! {})]
        (fn
          ([] (rf))
          ([result] (rf result))
          ([result input]
-          (swap! freqm update input (fnil inc 0))
+          (vswap! freqm update input (fnil inc 0))
           (rf result @freqm))))))
   ([coll]
    (into {} (freq) coll)))

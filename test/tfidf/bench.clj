@@ -41,6 +41,10 @@ Wordlist should be a file with one word per line."
   (time (do (into {} (comp (xf/tf-from-docs-xf) (xf/idf-xf) (xf/tfidf-xf)) (pmap xf/tf textcoll))
             (println "tfidf done."))))
 
+(defn tfidf-xf-frequencies-bench [textcoll]
+  (time (do (into {} (comp (xf/tf-from-docs-xf) (xf/idf-xf) (xf/tfidf-xf)) (pmap frequencies textcoll))
+            (println "tfidf done."))))
+
 (defn tfidf-incremental-bench [doccoll]
   (time (do (tfidf-from-docs doccoll)
             (println "incremental tfidf done."))))
