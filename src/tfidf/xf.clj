@@ -74,11 +74,11 @@ Returns a transducer when called without a collection."
        ([result] (rf result))
        ([result input]
         (let [doccount (count (:tfs input))
-              terms (reduce (fn [resmap [term docswithterm]]
-                             (assoc resmap term {:doccount docswithterm
-                                                 :idf (Math/log10 (/ doccount docswithterm))}))
-                           (:terms input) (:terms input))]
-          (rf result {:terms terms :tfs (:tfs input)}))))))
+              terms (map (fn [[term docswithterm]]
+                           [term {:doccount docswithterm
+                                  :idf (Math/log10 (/ doccount docswithterm))}])
+                         (:terms input))]
+          (rf result {:terms (into (sorted-map) terms) :tfs (:tfs input)}))))))
   ([coll]
    (into {} (idf-xf) coll)))
 
@@ -93,11 +93,11 @@ given an input collection of sorted(!) maps of terms/doccount/idf and tf values.
        ([result] (rf result))
        ([result input]
         (let [tfidfs
-              (pmap (fn [tfdoc]
+              (map (fn [tfdoc]
                      ;; make use of the fact that the tf values are placed at exactly
                      ;; the same position as their corresponding term in the term vector
                      ;; by mapping over both tf and term vector in parallel
-                     (pmap (fn [tfvalue [term {doccount :doccount idf :idf}]]
+                     (map (fn [tfvalue [term {doccount :doccount idf :idf}]]
                             (* tfvalue idf))
                           tfdoc (:terms input)))
                    (:tfs input))]
