@@ -60,7 +60,7 @@ Returns a stateful transducer when no collection is provided."
                 currows (conj currows newrow)]
             (vswap! tfs conj input)
             (vreset! termdoccount newtdcount)
-            (rf result {:terms @termdoccount :tfs currows})))))))
+            (rf result {:terms newtdcount :tfs currows})))))))
   ([coll]
    (into {} (tf-from-docs-xf) (map tf coll))))
 
