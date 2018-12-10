@@ -11,7 +11,7 @@
       (str/split #"\s+")
       ((partial concat ["." ","]))))
 
-(defn generate-random-text-coll
+(defn generate-random-text-coll-sequential
   "Generate a random text collection with nrtexts texts that are up to maxlength long.
 Wordlist should be a file with one word per line."
   [wordlist nrtexts maxlength]
@@ -21,6 +21,17 @@ Wordlist should be a file with one word per line."
                 #(doall (repeatedly (rand-nth lengths)
                                     (fn []
                                       (rand-nth words))))))))
+
+(defn generate-random-text-coll
+  "Generate a random text collection with nrtexts texts that are up to maxlength long.
+Wordlist should be a file with one word per line."
+  [wordlist nrtexts maxlength]
+  (let [words (file2wordlist wordlist)
+        lengths (range 1 maxlength) ; we don't want 0 length texts
+        random-word (fn [_] (rand-nth words))]
+    (doall (pmap (fn [_]
+                   (doall (pmap random-word (range 1 (rand-nth lengths)))))
+                 (range 1 nrtexts)))))
 
 (defrecord Document [title url tags content status])
 (defn textcoll2doccoll [textcoll]
