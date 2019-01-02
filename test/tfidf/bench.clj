@@ -97,16 +97,20 @@ Wordlist should be a file with one word per line."
                     (when results
                       result))))))))
 
-(defn tfidf-ppl-bench [textcoll & {:keys [f parallel timeout results]
-                                   :or {f xf/tf
-                                        parallel 10
-                                        timeout 60000
-                                        results false}}]
+(defn tfidf-ppl-bench
+  "This benchmark will return incorrect results. This is because async/pipeline don't work with stateful transducers (i.e. xf/tf-from-docs)"
+  [textcoll & {:keys [f parallel timeout results]
+               :or {f xf/tf
+                    parallel 10
+                    timeout 60000
+                    results false}}]
   (time (do
           (let [tfidf (comp (map f) (xf/tf-from-docs-xf) (xf/idf-xf) (xf/tfidf-xf))
                 c1 (async/chan 1)
                 c2 (async/chan 1)
                 resultchan (async/chan)]
+            ;; Bug: pipeline and stateful transducers don't match!
+            ;; cf. https://stackoverflow.com/questions/49146778/core-async-with-partition-by-stateful-transducer-not-keeping-state"
             (async/pipeline parallel c2 tfidf c1)
             (async/onto-chan c1 textcoll)
             (async/go
@@ -118,7 +122,7 @@ Wordlist should be a file with one word per line."
             (let [result (take-or-timeout! resultchan timeout)]
               (if (= result :timeout)
                 (println "timed out.")
-                (do (println "tfidf done.")
+                (do (println "tfidf done. Note: Will give incorrect results.")
                     (when results
                       result))))))))
 

@@ -45,14 +45,14 @@ Now, let's use `pmap` instead of `map` everywhere within the `xf` code:
 
 This doesn't buy us anything which is also telling for the additional coordination overhead.
 
-Actually, as it turns out, this is because of a naive use of `into` on the transducer. If we actually use the transducer with `pipeline`, then the results look rather different:
+Note that this is using `into` on the transducer. If we use the transducer with `pipeline`, then the results look rather different:
 
 	tfidf.bench> (tfidf-ppl-bench textcoll :f frequencies)
 	tfidf done.
 	"Elapsed time: 56.618998 msecs"
 	nil
 
-This is using a parallelization of 10 on the `pipeline` call.
+This is using a parallelization of 10 on the `pipeline` call. However, the sad thing is that [pipeline doesn't match with stateful transducers](https://stackoverflow.com/questions/49146778/core-async-with-partition-by-stateful-transducer-not-keeping-state) and `xf/tf-from-docs` is stateful. In other words, while this pipeline usage is pretty fast, it's actually giving buggy results.
 
 We can dig a little bit into where the time is spent by timing the different parts:
 
