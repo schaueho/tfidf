@@ -45,6 +45,7 @@ Returns a stateful transducer when no collection is provided."
          ([] (rf))
          ([result] (rf result))
          ([result input]
+          (println input)
           (let [newtdcount ; re-compute for each term how many documents contain it
                 (reduce (fn [newtdcount term]
                           (update newtdcount term (fnil inc 0))) ; inc #term, even if missing (=0)
@@ -63,6 +64,40 @@ Returns a stateful transducer when no collection is provided."
              (ref-set termdoccount newtdcount))
             (rf result {:terms newtdcount :tfs currows})))))))
   ([coll]
+   (into {} (tf-from-docs-xf) (map tf coll))))
+
+(defn tf-docs-exstate-xf
+  "Expects an atom with a map to manage state. When a collection is provided, returns a map of terms with the number of documents a term appears in and a list of related tf-vector for each document, sorted according to the terms.
+Returns a stateful transducer when no collection is provided."
+  ([state]
+   (fn [rf]
+     ;; (let [termdoccount (ref (sorted-map))
+     ;;       tfs (ref [])]
+       (fn
+         ([] (rf))
+         ([result] (rf result))
+         ([result input]
+          (println (str "ex:" input))
+          (let [oldstate @state
+                termdoccount (:terms oldstate)
+                tfs (:tfs oldstate)
+                newtdcount ; re-compute for each term how many documents contain it
+                  (reduce (fn [newtdcount term]
+                            (update newtdcount term (fnil inc 0))) ; inc #term, even if missing (=0)
+                          termdoccount (keys input))
+                termcount (count (keys newtdcount))              ; determine |terms|
+                termzeromap (into (sorted-map)                   ; build up a sorted map
+                                (zipmap (keys newtdcount)        ; of terms with vectors of
+                                        (repeat termcount 0)))   ; length |terms| all set to 0
+                currows (map (fn [tfdoc]                         ; re-map all existing tfs
+                               (vals (merge termzeromap tfdoc))) ; so that they contains all terms
+                             tfs)                                ; with 0 or the old tf value
+                newrow (vals (merge termzeromap input))
+                currows (conj currows newrow)
+                newstate {:terms newtdcount :tfs (conj tfs input)}]
+            (compare-and-set! state oldstate newstate)
+            (rf result {:terms newtdcount :tfs currows}))))))
+  ([state coll]
    (into {} (tf-from-docs-xf) (map tf coll))))
 
 (defn idf-xf

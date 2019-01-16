@@ -105,7 +105,8 @@ Wordlist should be a file with one word per line."
                     timeout 60000
                     results false}}]
   (time (do
-          (let [tfidf (comp (map f) (xf/tf-from-docs-xf) (xf/idf-xf) (xf/tfidf-xf))
+          (let [tf-from-docs (xf/tf-docs-exstate-xf (atom {:terms nil :tfs nil}))
+                tfidf (comp (map f) tf-from-docs  (xf/idf-xf) (xf/tfidf-xf))
                 c1 (async/chan 1)
                 c2 (async/chan 1)
                 resultchan (async/chan)]

@@ -3,7 +3,7 @@
   :url "http://github.com/schaueho/tfidf"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
-  :dependencies [[org.clojure/clojure "1.8.0"]]
+  :dependencies [[org.clojure/clojure "1.10.0"]]
   :profiles
   {:dev {:dependencies [[org.clojure/core.async "0.4.490"]
                         [midje "1.9.4"]

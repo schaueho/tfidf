@@ -1,7 +1,8 @@
 (ns tfidf.xf-test
   (:use midje.sweet)
   (:require [tfidf.tfidf :as tfidf]
-            [tfidf.xf :as xf]))
+            [tfidf.xf :as xf]
+            [clojure.core.async :as async]))
 
 (def text1 '("This" "is" "a" "silli" "english" "text" "test" "which" "is" "onli" "here" "for" "test" "pars"))
 (def text2 '("Another" "stupid" "english" "text" "test" "which" "is" "onli" "for" "test"))
@@ -29,26 +30,55 @@
              (into {} xf/norm-tf-xf text1) => (contains {"is" 1.0 "This" 0.7})))
 
 (facts "Test transducer version to compile term frequencies from documents"
-      (fact "We can convert a document collection to a set of rows of tf values"
-            (xf/tf-from-docs-xf textcoll) =>
-            {:terms {"And" 1, "Another" 1, "This" 1, "a" 1, "english" 3, "for" 3, "here" 1,
-                     "is" 2, "just" 1, "onli" 3, "other" 1, "pars" 1, "silli" 1, "some" 1,
-                     "stupid" 1, "test" 3, "text" 3, "which" 2},
-             :tfs '((0.7 0 0 0 0.7 0.7 0 0 0.7 0.7 0.7 0 0 0.7 0 1.0 0.7 0)
-                    (0 0 0.7 0.7 0.7 0.7 0.7 1.0 0 0.7 0 0.7 0.7 0 0 1.0 0.7 0.7)
-                    (0 0.7 0 0 0.7 0.7 0 0.7 0 0.7 0 0 0 0 0.7 1.0 0.7 0.7))})
-      (fact "This conversion gives the same data as the non-xf version"
-            (let [olddata (tfidf/tf-from-docs textcoll)
-                  newdata (xf/tf-from-docs-xf (map tfidf/tf textcoll))
-                  oldtfs (dorun (map #(zipmap (first olddata) %) (second olddata)))
-                  newtfs (dorun (map #(zipmap (:terms newdata) %) (:tfs newdata)))]
-              (= oldtfs newtfs)) => true))
+       (fact "We can convert a document collection to a set of rows of tf values"
+             (xf/tf-from-docs-xf textcoll) =>
+             {:terms {"And" 1, "Another" 1, "This" 1, "a" 1, "english" 3, "for" 3, "here" 1,
+                      "is" 2, "just" 1, "onli" 3, "other" 1, "pars" 1, "silli" 1, "some" 1,
+                      "stupid" 1, "test" 3, "text" 3, "which" 2},
+              :tfs '((0.7 0 0 0 0.7 0.7 0 0 0.7 0.7 0.7 0 0 0.7 0 1.0 0.7 0)
+                     (0 0 0.7 0.7 0.7 0.7 0.7 1.0 0 0.7 0 0.7 0.7 0 0 1.0 0.7 0.7)
+                     (0 0.7 0 0 0.7 0.7 0 0.7 0 0.7 0 0 0 0 0.7 1.0 0.7 0.7))})
+       (fact "This conversion gives the same data as the non-xf version"
+             (let [olddata (tfidf/tf-from-docs textcoll)
+                   newdata (xf/tf-from-docs-xf (map tfidf/tf textcoll))
+                   oldtfs (dorun (map #(zipmap (first olddata) %) (second olddata)))
+                   newtfs (dorun (map #(zipmap (:terms newdata) %) (:tfs newdata)))]
+               (= oldtfs newtfs)) => true))
+
+(facts "Trying to work around the broken pipeline"
+       (fact "Into vector"
+             (into [] (xf/tf-from-docs-xf) (map xf/tf textcoll)) => nil)
+       (fact "We can NOT convert a document collection to a set of rows of tf values with async/pipeline"
+             (let [;tfd (comp (map xf/tf) (xf/tf-from-docs-xf))
+                   tfd-x (xf/tf-docs-exstate-xf (atom {:terms (sorted-map) :tfs nil}))
+                   tfd (comp (map xf/tf) tfd-x)
+                   parallel 2 ;; number of threads to use
+                   c1 (async/chan 1)
+                   c2 (async/chan 1)
+                   resultchan (async/chan)]
+               ;; Bug: pipeline and stateful transducers don't match!
+               ;; cf. https://stackoverflow.com/questions/49146778/core-async-with-partition-by-stateful-transducer-not-keeping-state"
+               (async/pipeline parallel c2 tfd c1)
+               (async/onto-chan c1 textcoll)
+               (async/go
+                 (loop [n (async/<!! c2)
+                        results []]
+                   (if n
+                     (recur (async/<!! c2) (conj results n))
+                     (async/put! resultchan results))))
+               (async/<!! resultchan) =>
+               {:terms {"And" 1, "Another" 1, "This" 1, "a" 1, "english" 3, "for" 3, "here" 1,
+                        "is" 2, "just" 1, "onli" 3, "other" 1, "pars" 1, "silli" 1, "some" 1,
+                        "stupid" 1, "test" 3, "text" 3, "which" 2},
+                :tfs '((0.7 0 0 0 0.7 0.7 0 0 0.7 0.7 0.7 0 0 0.7 0 1.0 0.7 0)
+                       (0 0 0.7 0.7 0.7 0.7 0.7 1.0 0 0.7 0 0.7 0.7 0 0 1.0 0.7 0.7)
+                       (0 0.7 0 0 0.7 0.7 0 0.7 0 0.7 0 0 0 0 0.7 1.0 0.7 0.7))})))
 
 (facts "Test transducer version to compile idf documents"
        (let [testtfdata [{:terms (into (sorted-map) ; !sorted map expected!
-                                  {"And" 1, "Another" 1, "This" 1, "a" 1, "english" 3, "for" 3,
-                                  "here" 1, "is" 2, "just" 1, "onli" 3, "other" 1, "pars" 1,
-                                  "silli" 1, "some" 1, "stupid" 1, "test" 3, "text" 3, "which" 2}),
+                                       {"And" 1, "Another" 1, "This" 1, "a" 1, "english" 3, "for" 3,
+                                        "here" 1, "is" 2, "just" 1, "onli" 3, "other" 1, "pars" 1,
+                                        "silli" 1, "some" 1, "stupid" 1, "test" 3, "text" 3, "which" 2}),
                           :tfs '((0.7 0 0 0 0.7 0.7 0 0 0.7 0.7 0.7 0 0 0.7 0 1.0 0.7 0)
                                  (0 0 0.7 0.7 0.7 0.7 0.7 1.0 0 0.7 0 0.7 0.7 0 0 1.0 0.7 0.7)
                                  (0 0.7 0 0 0.7 0.7 0 0.7 0 0.7 0 0 0 0 0.7 1.0 0.7 0.7))}]
